@@ -135,18 +135,18 @@ var _ = Describe("GenerateServerConfigMap", func() {
 		})
 
 		When("additionalConfig is not provided", func() {
-			It("returns the default rabbitmq conf", func() {
+			It("returns the default rabbitmq configuration", func() {
 				builder.Instance.Spec.Rabbitmq.AdditionalConfig = ""
 
 				expectedRabbitmqConf := defaultRabbitmqConf(builder.Instance.Name)
 
 				Expect(configMapBuilder.Update(configMap)).To(Succeed())
-				Expect(configMap.Data).To(HaveKeyWithValue("rabbitmq.conf", expectedRabbitmqConf))
+				Expect(configMap.Data).To(HaveKeyWithValue("operatorDefaults.conf", expectedRabbitmqConf))
 			})
 		})
 
 		When("valid additionalConfig is provided", func() {
-			It("appends configurations to the default rabbitmq.conf and overwrites duplicate keys", func() {
+			XIt("appends configurations to the default rabbitmq.conf and overwrites duplicate keys", func() {
 				additionalConfig := `
 cluster_formation.peer_discovery_backend = my-backend
 my-config-property-0 = great-value
@@ -158,6 +158,17 @@ my-config-property-1 = better-value`
 
 				Expect(configMapBuilder.Update(configMap)).To(Succeed())
 				Expect(configMap.Data).To(HaveKeyWithValue("rabbitmq.conf", expectedRabbitmqConf))
+			})
+
+			It("adds configurations in a new rabbitmq configuration", func() {
+				additionalConfig := "cluster_formation.peer_discovery_backend = my-backend\nmy-config-property-0 = great-value"
+
+				instance.Spec.Rabbitmq.AdditionalConfig = additionalConfig
+
+				expectedRabbitmqConf := iniString(additionalConfig)
+
+				Expect(configMapBuilder.Update(configMap)).To(Succeed())
+				Expect(configMap.Data).To(HaveKeyWithValue("additionalConfig.conf", expectedRabbitmqConf))
 			})
 		})
 
